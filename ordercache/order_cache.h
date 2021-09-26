@@ -25,7 +25,7 @@ typedef struct Order {
 
 int delete_order(long order_id);
 
-long add_to_order_cache(Order **ol, long sz);
+long add_to_order_cache(Order **ol);
 
 Order *create_order(long id, long qty, enum Side side);
 

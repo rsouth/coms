@@ -7,7 +7,7 @@
 
 #include <time.h>
 
-char *dt_as_str(struct tm *dt);
+void dtp_as_str(char** pp_char, struct tm *p_dt);
 
 struct tm now();
 

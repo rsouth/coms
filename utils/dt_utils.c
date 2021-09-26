@@ -9,15 +9,14 @@
 
 #define DT_BUF_SZ  11
 
-char *dt_as_str(struct tm *dt) {
+void dtp_as_str(char** pp_char, struct tm *p_dt) {
   char buf[DT_BUF_SZ] = {0};
-  strftime(buf, DT_BUF_SZ, "%F", dt);
+  strftime(buf, DT_BUF_SZ, "%F", p_dt);
   buf[DT_BUF_SZ - 1] = '\0';
 
-  char *thing = malloc(DT_BUF_SZ);
-  strncpy(thing, buf, DT_BUF_SZ);
-  debug("malloced date at %p", thing);
-  return thing;
+  *pp_char = malloc(DT_BUF_SZ);
+  strncpy(*pp_char, buf, DT_BUF_SZ);
+  debug("created %s at %p", *pp_char, *pp_char);
 }
 
 struct tm now() {

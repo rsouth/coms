@@ -1,50 +1,38 @@
 
 
 //#include <stdlib.h> // malloc
+#include <limits.h>
 #include <stdio.h>
 #include <string.h> // memset
 #include <assert.h>
 #include "ordercache/order_cache.h"
 #include "securitycache/security_cache.h"
+
 //#include "lib/lwlog.h"
 
 #include "lib/seethe.h"
 
+
 #undef LOG_LEVEL
 #define LOG_LEVEL   DEBUG
 
-int main(__attribute__((unused)) int argc, char **argv) {
+int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) {
+  info("Starting.");
+  init_security_cache();
   init_order_cache();
 
-//    info("order_cache contains: %li", cache_count);
-
-//    free(th->order_cache);
-//    free(th);
-
-//    return 0;
-  info("created ordercache");
-//    OrderCache* order_cache = NULL;
-//    init_order_cache(order_cache);
-
-
+  Order *order = create_order(LONG_MAX, LONG_MAX, SELL);
+  create_order(456, 12345, BUY);
   print_all_orders();
-//    info("order_cache is %li", order_cache->cache_size);
-//
-  Order *order = create_order(10, 123, SELL);
-  Order *order2 = create_order(456, 12345, BUY);
-  print_all_orders();
-//    info("OrderId: %li has qty %li", order->id, order->qty);
-//
-//    // // free(a);
-//
+
   delete_order(order->id);
   print_all_orders();
 //
+
+  // shutdown
+  info("Stopping.");
   free_orders();
-//
-  print_all_orders();
-
-  init_security_cache();
-
+//  free_securities();
+  todo("Assertions for order & security cache having being free'd");
   return 0;
 }

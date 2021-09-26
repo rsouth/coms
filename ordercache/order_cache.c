@@ -14,11 +14,33 @@
  */
 const int OC_BUF_COUNT = 10;
 
-long cache_count = 0;      // current count of orders in the cache
-long next_order_index = 0; // next order can be added at this index
-long cache_size = 0;       // current size of the cache
+static long cache_count = 0;      // current count of orders in the cache
+static long next_order_index = 0; // next order can be added at this index
+static long cache_size = 0;       // current size of the cache
 
 Order **orders = NULL;     // the cache.
+
+char *side_str(enum Side side) {
+  return side == SELL ? "SELL" : "BUY";
+}
+
+char* order_str(char** buffer, Order* ord) {
+  assert(*buffer == NULL);
+  assert(ord != NULL);
+
+  long max_len = sizeof(char) * 100;
+  *buffer = malloc(max_len);
+  int len = snprintf(*buffer, max_len, "Order { id: %li, side: %s, qty: %li } (at %p)",
+                     ord->id,
+                     side_str(ord->side),
+                     ord->qty,
+                     ord);
+
+  critical("have: %i, %li", len, max_len);
+  if (len > max_len) {
+    critical("Truncated order_string for order %li", ord->id);
+  }
+}
 
 
 int ensure_size() // remember new_count can be +/-
@@ -81,29 +103,30 @@ int ensure_size() // remember new_count can be +/-
 
 }
 
-long add_to_order_cache(Order **ol, long sz) {
+long add_to_order_cache(Order **ol) {
+  assert(orders != NULL);
+
   if (ensure_size() != 0) {
     // fail.
     return -1;
   }
 
-  info("got order at addy %p", *ol);
+  char* order_string = NULL;
+  order_str(&order_string, *ol);
+  info("got %s add to cache", order_string);
 
   orders[next_order_index] = *ol;
   long added_at = next_order_index;
   next_order_index++;
   cache_count++;
 
-//    // add to cache...
-//    // order_cache.order_cache[0] = order;
-//    // info("added. sizeof %li, count ", sizeof(order_cache.order_cache) / sizeof(Order));
-//
+  info("added %s to cache at index %li", order_string, added_at);
+
+  free(order_string);
   return added_at;
 }
 
-char *side_str(enum Side side) {
-  return side == SELL ? "SELL" : "BUY";
-}
+
 
 Order *create_order(long id, long qty, enum Side side) {
   Order *order = malloc(sizeof(Order));
@@ -114,7 +137,7 @@ Order *create_order(long id, long qty, enum Side side) {
 
 //    Order ol[1] = {*order};
 //    orders[0] = order;
-  add_to_order_cache(&order, 0);
+  add_to_order_cache(&order);
   return order;
 }
 
@@ -125,10 +148,12 @@ int delete_order(long order_id) {
     Order *ord = orders[i];
     if (ord != NULL && orders[i]->id == order_id) {
 //            order_cache->order_cache[i] = NULL;
-      info("Delete order %li at %p", ord->id, ord);
+      char* order_string = NULL;
+      order_str(&order_string, ord);
+      info("Found %s, deleting", order_string);
+      free(order_string);
 
       free(ord);
-
       orders[i] = NULL;
       cache_count--;
     }
@@ -144,17 +169,16 @@ void init_order_cache() {
   orders = malloc(initial_size);
   memset(orders, 0, initial_size);
 
-  info("ordercache at %p", orders);
+  info("initialised order_cache with size %li at %p", cache_size, orders);
+  print_all_orders();
 }
 
 int free_orders() {
-  // free each order in the cache
+  info("Finding and freeing all %li orders", cache_count);
   for (int i = 0; i < cache_size; i++) {
     if (orders != NULL && orders[i] != 0) {
+      debug("Found and deleting order at index %i", i);
       delete_order(orders[i]->id);
-//      info("Freeing order at: %p", orders[i]);
-//      free(orders[i]);
-//      orders[i] = NULL;
     }
   }
 
@@ -170,10 +194,16 @@ void print_order(Order *ord) {
   info(PRINT_ORDER_FORMAT, ord->id, side_str(ord->side), ord->qty, ord);
 }
 
+
 void print_all_orders() {
-  if (orders == NULL || cache_count <= 0) {
+  if (orders == NULL) {
     info("Order cache is not initted");
     return;
+
+  } else if (cache_count <= 0) {
+    info("Order cache contains no entries");
+    return;
+
   } else {
     info("Cache has %li orders", cache_count);
     for (long i = 0; i < cache_size; i++) {
