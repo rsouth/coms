@@ -17,7 +17,7 @@
 /* Colour customization */
 #define DEBUG_COLOUR    ""
 #define INFO_COLOUR     "\x1B[36m"
-#define NOTICE_COLOUR   "\x1B[32;1m"
+#define NOTICE_COLOUR   "\x1B[33;2m"
 #define WARNING_COLOUR  "\x1B[33m"
 #define ERROR_COLOUR    "\x1B[31m"
 #define CRITICAL_COLOUR "\x1B[41;1m"
@@ -90,7 +90,7 @@
 /* Level enum */
 #define DEBUG       0
 #define INFO        1
-#define NOTICE      2
+#define TODO        2
 #define WARNING     3
 #define ERROR       4
 #define CRITICAL    5
@@ -114,11 +114,11 @@
     }                                                                               \
 } while (0)
 
-/* NOTICE LOG */
-#define notice(...) do {                                                            \
-    if (LOG_LEVEL <= NOTICE) {                                                      \
+/* "TO DO" LOG */
+#define todo(...) do {                                                            \
+    if (LOG_LEVEL <= TODO) {                                                      \
         emit_log(                                                                   \
-            NOTICE_COLOUR, "[NOTICE]", __FILENAME__, __func__, __LINE__, __VA_ARGS__    \
+            NOTICE_COLOUR, "[TODO]", __FILENAME__, __func__, __LINE__, __VA_ARGS__    \
         );                                                                          \
     }                                                                               \
 } while (0)

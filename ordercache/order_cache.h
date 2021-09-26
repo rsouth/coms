@@ -11,6 +11,8 @@
 #include <stdlib.h> // malloc
 #include "order_cache.h"
 
+#define PRINT_ORDER_FORMAT "Order %li => %s %li (%p)"
+
 typedef enum Side {
   BUY, SELL
 } Side;

@@ -5,6 +5,7 @@
 #include <string.h> // memset
 #include <assert.h>
 #include "ordercache/order_cache.h"
+#include "securitycache/security_cache.h"
 //#include "lib/lwlog.h"
 
 #include "lib/seethe.h"
@@ -13,7 +14,6 @@
 #define LOG_LEVEL   DEBUG
 
 int main(__attribute__((unused)) int argc, char **argv) {
-
   init_order_cache();
 
 //    info("order_cache contains: %li", cache_count);
@@ -43,6 +43,8 @@ int main(__attribute__((unused)) int argc, char **argv) {
   free_orders();
 //
   print_all_orders();
+
+  init_security_cache();
 
   return 0;
 }

@@ -2,45 +2,24 @@
 // Created by rsouth on 18/09/2021.
 //
 
-//#include <string.h> // memset
-//#include <stdio.h>
-//#include <stdlib.h> // malloc
 #include <assert.h>
 #include "order_cache.h"
+#include "../lib/seethe.h"
 
 #undef LOG_LEVEL
 #define LOG_LEVEL   DEBUG
-#include "../lib/seethe.h"
 
-//struct OrderCache order_cache;
-
-
-//typedef struct Order;
-//{
-//    long id;
-//    long qty;
-//} Order;
-
-//typedef struct OrderCache
-//{
-//    // Order order_cache;
-//    Order *order_cache;
-//    long cache_count;
-//    long next_order_index;
-//    long cache_size;
-//} OrderCache;
-
+/**
+ * order_cache default size and increase amount
+ */
 const int OC_BUF_COUNT = 10;
-const long OC_RESIZE_PCT = 20;
 
-long cache_count = 0;
-long next_order_index = 0;
-long cache_size = 0;
+long cache_count = 0;      // current count of orders in the cache
+long next_order_index = 0; // next order can be added at this index
+long cache_size = 0;       // current size of the cache
 
-Order **orders = NULL;
-//OrderCache* order_cache;
+Order **orders = NULL;     // the cache.
 
-const char *PRINT_ORDER_FORMAT = "Order %li => %s %li (%p)";
 
 int ensure_size() // remember new_count can be +/-
 {
@@ -49,15 +28,20 @@ int ensure_size() // remember new_count can be +/-
   if (cache_size >= cache_expected_size) {
     // cache is big enough :) .. but check if it's too big
     // if the cache size is too large for the count, we can shrink it
-    ldiv_t cache_lower_threshold = ldiv(cache_size, (OC_RESIZE_PCT / 100));
-    if (cache_count < cache_lower_threshold.quot) {
+    long upper_cache_threshold = cache_size + OC_BUF_COUNT;
+    if (cache_count < upper_cache_threshold) {
       // too much space, need to resize - shrink!
+      todo("cache too big; downsize it. Size %li vs count %li vs ideal %li",
+           cache_size,
+           cache_count,
+           upper_cache_threshold);
     }
 
     // if the next_order_index is too close to the max, shuffle
     if (cache_size - next_order_index <= 0) {
       // but need to shuffle :)
       // and set next_order_index to cache_count (or plus one?)
+      todo("cache OK size, but need to shuffle");
     }
 
     return 0;
@@ -66,15 +50,31 @@ int ensure_size() // remember new_count can be +/-
     // need to resize
 
 
-//      size_t new_size = sizeof(Order *) * (OC_BUF_COUNT + cache_size);
-//      Order** new_cache = malloc(new_size);
-//      if (new_cache == NULL) {
-//        return -1;
-//      }
-//      memset(new_cache, 0, new_size);
-//
-//      info("Resized from %li to %li", cache_size, OC_BUF_COUNT + cache_size);
-//      cache_size = OC_BUF_COUNT + cache_size;
+    size_t new_size = sizeof(Order *) * (OC_BUF_COUNT + cache_size);
+    Order **new_cache = malloc(new_size);
+    if (new_cache == NULL) {
+      return -1;
+    }
+    memset(new_cache, 0, new_size);
+
+
+    // copy from old to new
+    int new_cnt = 0;
+    for (int i = 0; i < cache_size; i++) {
+      if (orders[i] != NULL) {
+        new_cache[new_cnt] = orders[i];
+        new_cnt++;
+      }
+    }
+
+    info("Resized from %li to %li", cache_size, OC_BUF_COUNT + cache_size);
+    cache_size = OC_BUF_COUNT + cache_size;
+
+
+    // replace
+//      orders = new_cache;
+    free(orders);
+    orders = new_cache;
 
     return 0;
   }
@@ -122,7 +122,7 @@ int delete_order(long order_id) {
   debug("attempting to delete order %li", order_id);
 
   for (int i = 0; i < cache_size; i++) {
-    Order* ord = orders[i];
+    Order *ord = orders[i];
     if (ord != NULL && orders[i]->id == order_id) {
 //            order_cache->order_cache[i] = NULL;
       info("Delete order %li at %p", ord->id, ord);
@@ -166,7 +166,7 @@ int free_orders() {
   return 0;
 }
 
-void print_order(Order* ord) {
+void print_order(Order *ord) {
   info(PRINT_ORDER_FORMAT, ord->id, side_str(ord->side), ord->qty, ord);
 }
 
